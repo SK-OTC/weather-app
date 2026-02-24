@@ -1,94 +1,110 @@
-import { query } from './index.js';
+import { supabase } from './index.js';
 
 export async function createRequest({ location_id, requested_start_date, requested_end_date, temperature_unit = 'C', current_temp, current_feels_like, notes }) {
-  const result = await query(
-    `INSERT INTO weather_requests (location_id, requested_start_date, requested_end_date, temperature_unit, current_temp, current_feels_like, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING *`,
-    [location_id, requested_start_date, requested_end_date, temperature_unit, current_temp ?? null, current_feels_like ?? null, notes ?? null]
-  );
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from('weather_requests')
+    .insert([{
+      location_id,
+      requested_start_date,
+      requested_end_date,
+      temperature_unit,
+      current_temp: current_temp ?? null,
+      current_feels_like: current_feels_like ?? null,
+      notes: notes ?? null,
+    }])
+    .select();
+  
+  if (error) throw error;
+  return data[0] || null;
 }
 
 export async function listRequests({ limit = 50, offset = 0, locationName, startDate, endDate } = {}) {
-  let sql = `
-    SELECT wr.*, l.raw_input, l.normalized_name, l.country_code, l.lat, l.lon
-    FROM weather_requests wr
-    JOIN locations l ON wr.location_id = l.id
-    WHERE 1=1
-  `;
-  const params = [];
-  let i = 1;
+  let query = supabase
+    .from('weather_requests')
+    .select(`
+      *,
+      locations(raw_input, normalized_name, country_code, lat, lon)
+    `)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  
   if (locationName) {
-    sql += ` AND (l.normalized_name ILIKE $${i} OR l.raw_input ILIKE $${i})`;
-    params.push(`%${locationName}%`);
-    i++;
+    query = query.or(`locations.normalized_name.ilike.%${locationName}%,locations.raw_input.ilike.%${locationName}%`);
   }
   if (startDate) {
-    sql += ` AND wr.requested_end_date >= $${i}`;
-    params.push(startDate);
-    i++;
+    query = query.gte('requested_end_date', startDate);
   }
   if (endDate) {
-    sql += ` AND wr.requested_start_date <= $${i}`;
-    params.push(endDate);
-    i++;
+    query = query.lte('requested_start_date', endDate);
   }
-  sql += ` ORDER BY wr.created_at DESC LIMIT $${i} OFFSET $${i + 1}`;
-  params.push(limit, offset);
-  const result = await query(sql, params);
-  return result.rows;
+  
+  const { data, error } = await query;
+  if (error) throw error;
+  
+  // Flatten location data for backwards compatibility
+  return data.map(wr => ({
+    ...wr,
+    raw_input: wr.locations?.raw_input,
+    normalized_name: wr.locations?.normalized_name,
+    country_code: wr.locations?.country_code,
+    lat: wr.locations?.lat,
+    lon: wr.locations?.lon,
+  }));
 }
 
 export async function getRequestById(id) {
-  const result = await query(
-    `SELECT wr.*, l.raw_input, l.normalized_name, l.country_code, l.lat, l.lon
-     FROM weather_requests wr
-     JOIN locations l ON wr.location_id = l.id
-     WHERE wr.id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+  const { data, error } = await supabase
+    .from('weather_requests')
+    .select(`
+      *,
+      locations(raw_input, normalized_name, country_code, lat, lon)
+    `)
+    .eq('id', Number(id))
+    .single();
+  
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
+  if (!data) return null;
+  
+  // Flatten location data
+  return {
+    ...data,
+    raw_input: data.locations?.raw_input,
+    normalized_name: data.locations?.normalized_name,
+    country_code: data.locations?.country_code,
+    lat: data.locations?.lat,
+    lon: data.locations?.lon,
+  };
 }
 
 export async function updateRequest(id, { requested_start_date, requested_end_date, temperature_unit, current_temp, current_feels_like, notes }) {
-  const updates = [];
-  const params = [];
-  let i = 1;
-  if (requested_start_date !== undefined) {
-    updates.push(`requested_start_date = $${i++}`);
-    params.push(requested_start_date);
-  }
-  if (requested_end_date !== undefined) {
-    updates.push(`requested_end_date = $${i++}`);
-    params.push(requested_end_date);
-  }
-  if (temperature_unit !== undefined) {
-    updates.push(`temperature_unit = $${i++}`);
-    params.push(temperature_unit);
-  }
-  if (current_temp !== undefined) {
-    updates.push(`current_temp = $${i++}`);
-    params.push(current_temp ?? null);
-  }
-  if (current_feels_like !== undefined) {
-    updates.push(`current_feels_like = $${i++}`);
-    params.push(current_feels_like ?? null);
-  }
-  if (notes !== undefined) {
-    updates.push(`notes = $${i++}`);
-    params.push(notes);
-  }
-  if (updates.length === 0) return getRequestById(id);
-  updates.push(`updated_at = NOW()`);
-  params.push(id);
-  const result = await query(
-    `UPDATE weather_requests SET ${updates.join(', ')} WHERE id = $${i} RETURNING *`,
-    params
-  );
-  return result.rows[0] || null;
+  const updates = {};
+  
+  if (requested_start_date !== undefined) updates.requested_start_date = requested_start_date;
+  if (requested_end_date !== undefined) updates.requested_end_date = requested_end_date;
+  if (temperature_unit !== undefined) updates.temperature_unit = temperature_unit;
+  if (current_temp !== undefined) updates.current_temp = current_temp ?? null;
+  if (current_feels_like !== undefined) updates.current_feels_like = current_feels_like ?? null;
+  if (notes !== undefined) updates.notes = notes;
+  
+  if (Object.keys(updates).length === 0) return getRequestById(id);
+  
+  updates.updated_at = new Date().toISOString();
+  
+  const { data, error } = await supabase
+    .from('weather_requests')
+    .update(updates)
+    .eq('id', Number(id))
+    .select();
+  
+  if (error) throw error;
+  return data[0] || null;
 }
 
 export async function deleteRequest(id) {
-  await query('DELETE FROM weather_requests WHERE id = $1', [id]);
+  const { error } = await supabase
+    .from('weather_requests')
+    .delete()
+    .eq('id', Number(id));
+  
+  if (error) throw error;
 }

@@ -1,4 +1,4 @@
-import { query } from '../db/index.js';
+import { supabase } from '../lib/supabase.js';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { validationError } from '../lib/errors.js';
 
@@ -18,51 +18,52 @@ export function validateFormat(format) {
  * Fetch all weather requests with their snapshots for export (optional filters).
  */
 export async function getExportData({ locationName, startDate, endDate, limit = 500 } = {}) {
-  let sql = `
-    SELECT wr.id, wr.location_id, wr.requested_start_date, wr.requested_end_date,
-           wr.temperature_unit, wr.notes, wr.created_at, wr.updated_at,
-           l.raw_input, l.normalized_name, l.country_code, l.lat, l.lon
-    FROM weather_requests wr
-    JOIN locations l ON wr.location_id = l.id
-    WHERE 1=1
-  `;
-  const params = [];
-  let i = 1;
+  let query = supabase
+    .from('weather_requests')
+    .select(`
+      id, location_id, requested_start_date, requested_end_date,
+      temperature_unit, notes, created_at, updated_at,
+      locations(raw_input, normalized_name, country_code, lat, lon)
+    `)
+    .order('created_at', { ascending: false })
+    .limit(Math.min(Number(limit) || 500, 1000));
+  
   if (locationName) {
-    sql += ` AND (l.normalized_name ILIKE $${i} OR l.raw_input ILIKE $${i})`;
-    params.push(`%${locationName}%`);
-    i++;
+    query = query.or(`locations.normalized_name.ilike.%${locationName}%,locations.raw_input.ilike.%${locationName}%`);
   }
   if (startDate) {
-    sql += ` AND wr.requested_end_date >= $${i}`;
-    params.push(startDate);
-    i++;
+    query = query.gte('requested_end_date', startDate);
   }
   if (endDate) {
-    sql += ` AND wr.requested_start_date <= $${i}`;
-    params.push(endDate);
-    i++;
+    query = query.lte('requested_start_date', endDate);
   }
-  sql += ` ORDER BY wr.created_at DESC LIMIT $${i}`;
-  params.push(Math.min(Number(limit) || 500, 1000));
-  const requestsResult = await query(sql, params);
-  const rows = requestsResult.rows;
-  if (rows.length === 0) return [];
+  
+  const { data: requestsData, error: requestsError } = await query;
+  if (requestsError) throw requestsError;
+  
+  if (requestsData.length === 0) return [];
 
-  const ids = rows.map(r => r.id);
-  const placeholders = ids.map((_, j) => `$${j + 1}`).join(', ');
-  const snapResult = await query(
-    `SELECT weather_request_id, snapshot_date, temp_min, temp_max, description
-     FROM weather_snapshots WHERE weather_request_id IN (${placeholders}) ORDER BY weather_request_id, snapshot_date`,
-    ids
-  );
+  // Fetch snapshots for all requests
+  const requestIds = requestsData.map(r => r.id);
+  const { data: snapshotsData, error: snapshotsError } = await supabase
+    .from('weather_snapshots')
+    .select('weather_request_id, snapshot_date, temp_min, temp_max, description')
+    .in('weather_request_id', requestIds)
+    .order('snapshot_date', { ascending: true });
+  
+  if (snapshotsError) throw snapshotsError;
+
+  // Map snapshots by request ID
   const snapByRequest = new Map();
-  for (const s of snapResult.rows) {
-    if (!snapByRequest.has(s.weather_request_id)) snapByRequest.set(s.weather_request_id, []);
+  for (const s of snapshotsData || []) {
+    if (!snapByRequest.has(s.weather_request_id)) {
+      snapByRequest.set(s.weather_request_id, []);
+    }
     snapByRequest.get(s.weather_request_id).push(s);
   }
 
-  return rows.map(r => ({
+  // Flatten and enrich data
+  return requestsData.map(r => ({
     id: r.id,
     location_id: r.location_id,
     requested_start_date: r.requested_start_date,
@@ -71,11 +72,11 @@ export async function getExportData({ locationName, startDate, endDate, limit = 
     notes: r.notes,
     created_at: r.created_at,
     updated_at: r.updated_at,
-    raw_input: r.raw_input,
-    normalized_name: r.normalized_name,
-    country_code: r.country_code,
-    lat: r.lat,
-    lon: r.lon,
+    raw_input: r.locations?.raw_input,
+    normalized_name: r.locations?.normalized_name,
+    country_code: r.locations?.country_code,
+    lat: r.locations?.lat,
+    lon: r.locations?.lon,
     snapshots: snapByRequest.get(r.id) || [],
   }));
 }

@@ -1,5 +1,6 @@
 import * as locationsDb from '../db/locations.js';
 import * as weatherService from './weatherService.js';
+import { supabase } from '../lib/supabase.js';
 
 /**
  * Resolve user input to a location row (reuse existing or create).
@@ -27,13 +28,18 @@ export async function resolveAndPersistLocation(locationInput, locationType = 'c
 }
 
 async function findExistingLocation(normalizedName, countryCode, lat, lon) {
-  const { query } = await import('../db/index.js');
-  const result = await query(
-    `SELECT * FROM locations
-     WHERE normalized_name = $1 AND country_code = $2
-       AND ABS(lat - $3) < 0.01 AND ABS(lon - $4) < 0.01
-     LIMIT 1`,
-    [normalizedName, countryCode, lat, lon]
-  );
-  return result.rows[0] || null;
+  const { data, error } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('normalized_name', normalizedName)
+    .eq('country_code', countryCode)
+    .gte('lat', lat - 0.01)
+    .lte('lat', lat + 0.01)
+    .gte('lon', lon - 0.01)
+    .lte('lon', lon + 0.01)
+    .limit(1)
+    .single();
+  
+  if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows
+  return data || null;
 }

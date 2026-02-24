@@ -1,75 +1,83 @@
-import { query } from './index.js';
+import { supabase } from './index.js';
 
 export async function createSnapshot({ weather_request_id, snapshot_date, temp_min, temp_max, description, raw_api_payload }) {
-  const result = await query(
-    `INSERT INTO weather_snapshots (weather_request_id, snapshot_date, temp_min, temp_max, description, raw_api_payload)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING *`,
-    [weather_request_id, snapshot_date, temp_min ?? null, temp_max ?? null, description ?? null, raw_api_payload ? JSON.stringify(raw_api_payload) : null]
-  );
-  return result.rows[0];
+  const { data, error } = await supabase
+    .from('weather_snapshots')
+    .insert([{
+      weather_request_id: Number(weather_request_id),
+      snapshot_date,
+      temp_min: temp_min ?? null,
+      temp_max: temp_max ?? null,
+      description: description ?? null,
+      raw_api_payload,
+    }])
+    .select();
+  
+  if (error) throw error;
+  return data[0] || null;
 }
 
 export async function deleteSnapshotsByRequestId(weather_request_id) {
-  await query('DELETE FROM weather_snapshots WHERE weather_request_id = $1', [weather_request_id]);
+  const { error } = await supabase
+    .from('weather_snapshots')
+    .delete()
+    .eq('weather_request_id', Number(weather_request_id));
+  
+  if (error) throw error;
 }
 
 export async function deleteSnapshot(id) {
-  await query('DELETE FROM weather_snapshots WHERE id = $1', [id]);
+  const { error } = await supabase
+    .from('weather_snapshots')
+    .delete()
+    .eq('id', Number(id));
+  
+  if (error) throw error;
 }
 
 export async function updateSnapshot(id, { temp_min, temp_max, description }) {
-  const updates = [];
-  const params = [];
-  let i = 1;
+  const updates = {};
   
-  if (temp_min !== undefined) {
-    updates.push(`temp_min = $${i++}`);
-    params.push(temp_min ?? null);
-  }
-  if (temp_max !== undefined) {
-    updates.push(`temp_max = $${i++}`);
-    params.push(temp_max ?? null);
-  }
-  if (description !== undefined) {
-    updates.push(`description = $${i++}`);
-    params.push(description ?? null);
-  }
+  if (temp_min !== undefined) updates.temp_min = temp_min ?? null;
+  if (temp_max !== undefined) updates.temp_max = temp_max ?? null;
+  if (description !== undefined) updates.description = description ?? null;
+
+  if (Object.keys(updates).length === 0) return null;
+
+  const { data, error } = await supabase
+    .from('weather_snapshots')
+    .update(updates)
+    .eq('id', Number(id))
+    .select();
   
-  if (updates.length === 0) return null;
-  
-  params.push(id);
-  const result = await query(
-    `UPDATE weather_snapshots SET ${updates.join(', ')} WHERE id = $${i} RETURNING *`,
-    params
-  );
-  return result.rows[0] || null;
+  if (error) throw error;
+  return data[0] || null;
 }
 
 export async function getSnapshotsByRequestId(weather_request_id) {
-  const result = await query(
-    'SELECT * FROM weather_snapshots WHERE weather_request_id = $1 ORDER BY snapshot_date',
-    [weather_request_id]
-  );
-  return result.rows;
+  const { data, error } = await supabase
+    .from('weather_snapshots')
+    .select('*')
+    .eq('weather_request_id', Number(weather_request_id))
+    .order('snapshot_date', { ascending: true });
+  
+  if (error) throw error;
+  return data || [];
 }
 
 export async function insertSnapshots(snapshots) {
   if (!snapshots.length) return;
-  const values = snapshots.map((s, i) => {
-    const j = i * 6;
-    return `($${j + 1}, $${j + 2}, $${j + 3}, $${j + 4}, $${j + 5}, $${j + 6})`;
-  }).join(', ');
-  const params = snapshots.flatMap(s => [
-    s.weather_request_id,
-    s.snapshot_date,
-    s.temp_min ?? null,
-    s.temp_max ?? null,
-    s.description ?? null,
-    s.raw_api_payload ? JSON.stringify(s.raw_api_payload) : null,
-  ]);
-  await query(
-    `INSERT INTO weather_snapshots (weather_request_id, snapshot_date, temp_min, temp_max, description, raw_api_payload) VALUES ${values}`,
-    params
-  );
+  
+  const { error } = await supabase
+    .from('weather_snapshots')
+    .insert(snapshots.map(s => ({
+      weather_request_id: Number(s.weather_request_id),
+      snapshot_date: s.snapshot_date,
+      temp_min: s.temp_min ?? null,
+      temp_max: s.temp_max ?? null,
+      description: s.description ?? null,
+      raw_api_payload: s.raw_api_payload,
+    })));
+  
+  if (error) throw error;
 }
