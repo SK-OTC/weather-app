@@ -110,5 +110,5 @@ App runs at `http://localhost:5173` and proxies `/api` to the backend.
 | GET | `/api/weather-requests/:id` | Get one with snapshots |
 | PUT | `/api/weather-requests/:id` | Update (startDate, endDate, units, notes) |
 | DELETE | `/api/weather-requests/:id` | Delete |
-| GET | `/api/export` | Export (query: format=json|csv|xml|md|pdf) |
+| GET | `/api/export` | Export (query: format=json|csv|md|pdf) |
 | GET | `/api/locations/:id/media` | YouTube videos + Google Maps URL for location |

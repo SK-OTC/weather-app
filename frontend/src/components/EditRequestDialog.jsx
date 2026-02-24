@@ -1,22 +1,6 @@
 import { useState } from 'react';
+import { getToday, getMaxDate } from '../utils/dateUtils';
 import './EditRequestDialog.css';
-
-function getToday() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function getMaxDate() {
-  const d = new Date();
-  d.setDate(d.getDate() + 5);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 export default function EditRequestDialog({ initial, onSave, onClose, snapshots, locationName }) {
   const [selectedDate, setSelectedDate] = useState(getToday());

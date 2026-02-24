@@ -2,7 +2,7 @@ import { query } from '../db/index.js';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { validationError } from '../lib/errors.js';
 
-const FORMATS = ['json', 'csv', 'xml', 'md', 'markdown', 'pdf'];
+const FORMATS = ['json', 'csv', 'md', 'markdown', 'pdf'];
 
 export function getSupportedFormats() {
   return FORMATS;
@@ -107,55 +107,6 @@ function escapeCsv(val) {
   return s;
 }
 
-export function toXML(data) {
-  const parts = ['<?xml version="1.0" encoding="UTF-8"?>', '<weather_export>'];
-  for (const row of data) {
-    const snapshots = row.snapshots || [];
-    parts.push('  <request>');
-    parts.push(`    <id>${row.id}</id>`);
-    parts.push(`    <normalized_name>${escapeXml(row.normalized_name)}</normalized_name>`);
-    parts.push(`    <country_code>${escapeXml(row.country_code)}</country_code>`);
-    parts.push(`    <requested_start_date>${row.requested_start_date}</requested_start_date>`);
-    parts.push(`    <requested_end_date>${row.requested_end_date}</requested_end_date>`);
-    parts.push(`    <temperature_unit>${row.temperature_unit}</temperature_unit>`);
-    parts.push(`    <notes>${escapeXml(row.notes)}</notes>`);
-    parts.push(`    <created_at>${row.created_at}</created_at>`);
-    parts.push('    <snapshots>');
-    for (const s of snapshots) {
-      parts.push('      <snapshot>');
-      parts.push(`        <snapshot_date>${s.snapshot_date}</snapshot_date>`);
-      parts.push(`        <temp_min>${s.temp_min}</temp_min>`);
-      parts.push(`        <temp_max>${s.temp_max}</temp_max>`);
-      parts.push(`        <description>${escapeXml(s.description)}</description>`);
-      parts.push('      </snapshot>');
-    }
-    parts.push('    </snapshots>');
-    parts.push('  </request>');
-  }
-  parts.push('</weather_export>');
-  return parts.join('\n');
-}
-
-function escapeXml(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function escapeMarkdownText(str) {
-  if (str == null) return '';
-  return String(str)
-    .replace(/\\/g, '\\\\')
-    .replace(/#/g, '\\#')
-    .replace(/\[/g, '\\[')
-    .replace(/\]/g, '\\]')
-    .replace(/\|/g, '\\|');
-}
-
 export function toMarkdown(data) {
   const lines = ['# Weather Export', ''];
   for (const row of data) {
@@ -231,7 +182,6 @@ export function getContentTypeAndFilename(format) {
   const types = {
     json: ['application/json', 'weather-export.json'],
     csv: ['text/csv', 'weather-export.csv'],
-    xml: ['application/xml', 'weather-export.xml'],
     md: ['text/markdown', 'weather-export.md'],
     pdf: ['application/pdf', 'weather-export.pdf'],
   };

@@ -16,7 +16,6 @@ export async function exportData(req, res, next) {
     let body;
     if (format === 'json') body = exportService.toJSON(data);
     else if (format === 'csv') body = exportService.toCSV(data);
-    else if (format === 'xml') body = exportService.toXML(data);
     else body = exportService.toMarkdown(data);
     res.send(body);
   } catch (e) {

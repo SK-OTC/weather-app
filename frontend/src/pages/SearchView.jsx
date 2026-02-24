@@ -1,26 +1,11 @@
 import { useState, useEffect } from 'react';
-import { createWeatherRequest } from '../api/client';
+import { createWeatherRequest, listWeatherRequests } from '../api/client';
+import { getToday, getMaxDate } from '../utils/dateUtils';
 import LocationInput from '../components/LocationInput';
 import WeatherSummaryCard from '../components/WeatherSummaryCard';
 import ForecastList from '../components/ForecastList';
 import ErrorBanner from '../components/ErrorBanner';
 import './SearchView.css';
-
-function getToday() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-function getMaxDate() {
-  const d = new Date();
-  d.setDate(d.getDate() + 5);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function enhanceErrorMessage(err, locationType, locationInput) {
   const baseMessage = err.message || 'Something went wrong. Please try again.';
@@ -55,6 +40,14 @@ function enhanceErrorMessage(err, locationType, locationInput) {
   return baseMessage + suggestion + additionalDetails;
 }
 
+function validateSearchResult(data) {
+  if (!data) return 'No data received from search.';
+  if (!data.current) return 'Unable to retrieve current weather data.';
+  if (!data.forecast || data.forecast.length === 0) return 'Unable to retrieve forecast data.';
+  if (!data.location) return 'Unable to resolve location.';
+  return null; // Valid result
+}
+
 export default function SearchView() {
   const [locationInput, setLocationInput] = useState('');
   const [locationType, setLocationType] = useState('city');
@@ -65,18 +58,49 @@ export default function SearchView() {
   const [result, setResult] = useState(null);
   const [hasShownResults, setHasShownResults] = useState(false);
 
-  // Load result from localStorage on mount
+  // Load result from localStorage on mount, but clear it if database is empty
   useEffect(() => {
-    const savedResult = localStorage.getItem('weatherResult');
-    if (savedResult) {
+    const initializeStorage = async () => {
       try {
-        const parsed = JSON.parse(savedResult);
-        setResult(parsed);
-        setHasShownResults(true);
-      } catch (e) {
-        console.error('Failed to parse saved result:', e);
+        // Check if database has any saved requests
+        const response = await listWeatherRequests({ limit: 1 });
+        const databaseIsEmpty = !response.items || response.items.length === 0;
+        
+        if (databaseIsEmpty) {
+          // Database is empty, clear the cached result to show fresh SearchView
+          localStorage.removeItem('weatherResult');
+          setResult(null);
+          setHasShownResults(false);
+        } else {
+          // Database has data, load from localStorage if available
+          const savedResult = localStorage.getItem('weatherResult');
+          if (savedResult) {
+            try {
+              const parsed = JSON.parse(savedResult);
+              setResult(parsed);
+              setHasShownResults(true);
+            } catch (e) {
+              console.error('Failed to parse saved result:', e);
+            }
+          }
+        }
+      } catch (err) {
+        // Error checking database, preserve localStorage to avoid losing data
+        console.error('Error checking database:', err);
+        const savedResult = localStorage.getItem('weatherResult');
+        if (savedResult) {
+          try {
+            const parsed = JSON.parse(savedResult);
+            setResult(parsed);
+            setHasShownResults(true);
+          } catch (e) {
+            console.error('Failed to parse saved result:', e);
+          }
+        }
       }
-    }
+    };
+    
+    initializeStorage();
   }, []);
 
   // Save result to localStorage whenever it changes
@@ -107,7 +131,13 @@ export default function SearchView() {
         units,
         notes: notes || undefined,
       });
-      setResult(data);
+      const validationError = validateSearchResult(data);
+      if (validationError) {
+        setError(validationError);
+        setResult(null);
+      } else {
+        setResult(data);
+      }
     } catch (err) {
       const enhancedMessage = enhanceErrorMessage(err, locationType, input);
       setError(enhancedMessage);
@@ -137,8 +167,14 @@ export default function SearchView() {
             units,
             notes: notes || undefined,
           });
-          setResult(data);
-          setLocationInput(lat + ', ' + lon);
+          const validationError = validateSearchResult(data);
+          if (validationError) {
+            setError(validationError);
+            setResult(null);
+          } else {
+            setResult(data);
+            setLocationInput(lat + ', ' + lon);
+          }
         } catch (err) {
           const enhancedMessage = enhanceErrorMessage(err, 'coords', `${lat}, ${lon}`);
           setError(enhancedMessage);
@@ -157,7 +193,7 @@ export default function SearchView() {
   return (
     <div className="search-view">
       <h2>🌤️ Current weather and 5-day forecast</h2>
-      <div className={`search-container ${hasShownResults ? 'with-results' : 'no-results'}`}>
+    <div className={`search-container ${hasShownResults ? 'with-results' : 'no-results'}`}>
         <form onSubmit={handleSubmit} className="search-form">
           <h3 className="form-title">📍 Find Weather</h3>
           <LocationInput
@@ -186,27 +222,36 @@ export default function SearchView() {
             {loading ? '⏳ Loading…' : '🔍 Get weather'}
           </button>
         </form>
-        {result && (
-          <div className="result-section">
-            <WeatherSummaryCard
-              location={result.request?.normalized_name || result.location?.normalized_name}
-              country={result.request?.country_code || result.location?.country_code}
-              current={result.current}
-              unit={result.request?.temperature_unit || 'C'}
-            />
-            <ForecastList
-              forecast={result.forecast || result.snapshots}
-              unit={result.request?.temperature_unit || 'C'}
-            />
-            {result.location && (
-              <div className="media-links">
-                <a href={'https://www.google.com/maps?q=' + result.location.lat + ',' + result.location.lon} target="_blank" rel="noopener noreferrer">🗺️ View on Google Maps</a>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="result-container">
+          {error && (
+            <ErrorBanner message={error} onDismiss={() => setError(null)} />
+          )}
+          {loading && (
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+            </div>
+          )}
+          {!loading && result && (
+            <div className="result-section">
+              <WeatherSummaryCard
+                location={result.request?.normalized_name || result.location?.normalized_name}
+                country={result.request?.country_code || result.location?.country_code}
+                current={result.current}
+                unit={result.request?.temperature_unit || 'C'}
+              />
+              <ForecastList
+                forecast={result.forecast || result.snapshots}
+                unit={result.request?.temperature_unit || 'C'}
+              />
+              {result.location && (
+                <div className="media-links">
+                  <a href={'https://www.google.com/maps?q=' + result.location.lat + ',' + result.location.lon} target="_blank" rel="noopener noreferrer">🗺️ View on Google Maps</a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-      <ErrorBanner message={error} onDismiss={() => setError(null)} />
     </div>
   );
 }

@@ -26,11 +26,6 @@ CREATE TABLE IF NOT EXISTS weather_requests (
   CONSTRAINT valid_date_range CHECK (requested_start_date <= requested_end_date)
 );
 
--- Ensure all required columns exist (for existing databases)
-ALTER TABLE weather_requests ADD COLUMN IF NOT EXISTS current_temp DECIMAL(5, 2);
-ALTER TABLE weather_requests ADD COLUMN IF NOT EXISTS current_feels_like DECIMAL(5, 2);
-
-
 -- weather_snapshots: cached weather data per request (current + forecast points)
 CREATE TABLE IF NOT EXISTS weather_snapshots (
   id SERIAL PRIMARY KEY,
