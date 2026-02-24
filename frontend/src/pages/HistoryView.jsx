@@ -59,9 +59,27 @@ export default function HistoryView() {
     }
   };
 
-  const makeDateReadable = (date) => {
-    if (!date) return null;
-    const d = new Date(date);    
+  const makeDateReadable = (dateStr) => {
+    if (!dateStr) return null;
+    
+    // Check if it's an ISO timestamp (contains 'T')
+    if (dateStr.includes('T')) {
+      // Parse ISO timestamp and convert to local timezone
+      const d = new Date(dateStr);
+      if (Number.isNaN(d.getTime())) return dateStr;
+      return d.toLocaleString(undefined, { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    // Otherwise, treat as date-only string (YYYY-MM-DD)
+    const [year, month, day] = dateStr.split('-').map(Number);
+    if (!year || !month || !day) return dateStr;
+    const d = new Date(year, month - 1, day);
     return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
