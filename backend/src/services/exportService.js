@@ -107,6 +107,11 @@ function escapeCsv(val) {
   return s;
 }
 
+function escapeMarkdownText(val) {
+  if (val == null) return '';
+  return String(val);
+}
+
 export function toMarkdown(data) {
   const lines = ['# Weather Export', ''];
   for (const row of data) {

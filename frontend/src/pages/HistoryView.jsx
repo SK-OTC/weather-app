@@ -133,7 +133,6 @@ export default function HistoryView() {
           <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)}>
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
-            <option value="xml">XML</option>
             <option value="md">Markdown</option>
             <option value="pdf">PDF</option>
           </select>
