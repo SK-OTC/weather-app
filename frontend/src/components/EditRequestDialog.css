@@ -1,0 +1,216 @@
+.dialog-overlay { 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(0, 0, 0, 0.4); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 1000; 
+  padding: 1rem;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dialog-box { 
+  background: var(--card-bg); 
+  border-radius: 8px; 
+  padding: 1.5rem; 
+  max-width: 24rem; 
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.3s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dialog-box h3 { 
+  margin: 0 0 1rem;
+  font-size: 1.3rem;
+  color: var(--primary-color);
+}
+
+.dialog-box label { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.25rem; 
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.dialog-box input, 
+.dialog-box select { 
+  padding: 0.5rem; 
+  min-height: var(--touch-min);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: all var(--transition-short);
+  width: 100%;
+}
+
+.dialog-box input:focus, 
+.dialog-box select:focus { 
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  transform: translateY(-2px);
+}
+
+.dialog-box textarea {
+  padding: 0.5rem;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all var(--transition-short);
+  width: 100%;
+  resize: vertical;
+}
+
+.dialog-box textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+}
+
+.forecast-info {
+  background: linear-gradient(135deg, #f0f8ff 0%, #e8f4f8 100%);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 4px solid var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.info-text {
+  margin: 0;
+  color: #555;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.inline-error {
+  color: var(--error-text);
+  font-size: 0.875rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: var(--error-bg);
+  border-radius: 4px;
+  border-left: 3px solid var(--error-text);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dialog-actions { 
+  display: flex; 
+  gap: 0.5rem; 
+  margin-top: 1rem; 
+  justify-content: flex-end;
+}
+
+.dialog-actions .btn {
+  padding: 0.6rem 1rem;
+  min-height: var(--touch-min);
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-short);
+}
+
+.dialog-actions .btn-primary {
+  background: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.dialog-actions .btn-primary:hover:not(:disabled) {
+  background: var(--secondary-color);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.dialog-actions .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dialog-actions .btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
+}
+
+.dialog-actions .btn-secondary:hover:not(:disabled) {
+  background: #ebebeb;
+  border-color: #999;
+}
+
+@media (max-width: 479px) {
+  .dialog-overlay {
+    padding: 0.5rem;
+  }
+
+  .dialog-box {
+    padding: 1rem;
+    max-width: 100%;
+    border-radius: 12px;
+  }
+
+  .dialog-box h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .dialog-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .dialog-actions .btn {
+    width: 100%;
+    padding: 0.7rem;
+  }
+
+  .dialog-box label,
+  .dialog-box input,
+  .dialog-box select,
+  .dialog-box textarea {
+    font-size: max(1rem, 16px);
+  }
+}
+
+@media (min-width: 480px) {
+  .dialog-box {
+    max-width: 90vw;
+  }
+}

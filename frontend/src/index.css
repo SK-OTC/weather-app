@@ -1,0 +1,53 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8f4f8 100%);
+  transition: background-color 0.3s ease;
+}
+
+:root {
+  --header-bg: #1976d2;
+  --header-text: #fff;
+  --card-bg: #fff;
+  --error-bg: #ffebee;
+  --error-text: #c62828;
+  --border: #e0e0e0;
+  --touch-min: 44px;
+  --primary-color: #1976d2;
+  --secondary-color: #0d47a1;
+  --accent-color: #42a5f5;
+  --success-color: #4caf50;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --transition-short: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* Mobile-first: Extra small screens (320px) */
+@media (max-width: 479px) {
+  body { font-size: 0.95rem; }
+  .container { max-width: 100%; }
+}
+
+/* Small screens (480px) */
+@media (min-width: 480px) {
+  body { font-size: 1rem; }
+}
+
+/* Medium screens (600px) */
+@media (min-width: 600px) {
+  .container { max-width: 100%; }
+}
+
+/* Large screens (1024px) */
+@media (min-width: 1024px) {
+  .container { max-width: 960px; margin: 0 auto; }
+}

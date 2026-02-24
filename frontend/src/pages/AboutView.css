@@ -1,0 +1,117 @@
+.about-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 200px);
+  padding: 2rem 1rem;
+}
+
+.about-content {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.5rem;
+  padding: 3rem 2rem;
+  max-width: 600px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.about-title {
+  font-size: 2.5rem;
+  color: var(--primary-color, #1e88e5);
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.about-person {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(30, 136, 229, 0.1);
+  border-radius: 1rem;
+  border-left: 4px solid var(--primary-color, #1e88e5);
+}
+
+.about-person h3 {
+  font-size: 1.5rem;
+  color: var(--text-color, #333);
+  margin: 0;
+  font-weight: 600;
+}
+
+.about-description {
+  margin: 2rem 0 0;
+  text-align: left;
+}
+
+.about-description h4 {
+  font-size: 1.25rem;
+  color: var(--primary-color, #1e88e5);
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.about-description p {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--text-color, #555);
+  margin: 0 0 1.5rem 0;
+}
+
+.about-description p:last-child {
+  margin-bottom: 0;
+}
+
+.about-description a {
+  color: var(--primary-color, #1e88e5);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.about-description a:hover {
+  color: var(--primary-dark, #1565c0);
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .about-container {
+    min-height: auto;
+    padding: 1rem;
+  }
+
+  .about-content {
+    padding: 2rem 1.5rem;
+    border-radius: 1rem;
+  }
+
+  .about-title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-person h3 {
+    font-size: 1.25rem;
+  }
+
+  .about-description h4 {
+    font-size: 1.1rem;
+  }
+
+  .about-description p {
+    font-size: 0.95rem;
+  }
+}
