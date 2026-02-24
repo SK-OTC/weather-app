@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 async function handleResponse(res) {
   const text = await res.text();
@@ -55,11 +55,6 @@ export async function updateWeatherRequest(id, body) {
 export async function deleteWeatherRequest(id) {
   const res = await fetch(`${API_BASE}/weather-requests/${id}`, { method: 'DELETE' });
   if (res.status === 204) return;
-  return handleResponse(res);
-}
-
-export async function getLocationMedia(locationId) {
-  const res = await fetch(`${API_BASE}/locations/${locationId}/media`);
   return handleResponse(res);
 }
 
