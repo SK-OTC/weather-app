@@ -17,7 +17,7 @@ npm install
 
 | Package   | Version | Purpose                    |
 |-----------|---------|----------------------------|
-| axios     | ^1.6.2  | HTTP client for weather/YouTube APIs |
+| axios     | ^1.6.2  | HTTP client for weather API |
 | cors      | ^2.8.5  | CORS middleware            |
 | dotenv    | ^16.3.1 | Load `.env` variables      |
 | express   | ^4.19.2 | Web server (patched for known CVEs) |

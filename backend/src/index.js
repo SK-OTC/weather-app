@@ -3,7 +3,6 @@ import express from 'express';
 import cors from 'cors';
 import { weatherRoutes } from './routes/weatherRoutes.js';
 import { exportRoutes } from './routes/exportRoutes.js';
-import { mediaRoutes } from './routes/mediaRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -14,7 +13,6 @@ app.use(express.json());
 
 app.use('/api/weather-requests', weatherRoutes);
 app.use('/api/export', exportRoutes);
-app.use('/api/locations', mediaRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

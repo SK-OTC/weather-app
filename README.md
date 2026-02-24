@@ -5,14 +5,13 @@ A full-stack weather application that satisfies **Tech Assessment 1 (Frontend)**
 ## Assessments completed
 
 - **Tech Assessment 1 (Frontend):** Implemented. The React app lets users enter location (city, zip, coordinates), shows current weather and 5-day forecast with responsive grid layout, supports "Use current location" (geolocation), includes emoji weather icons, and provides context-aware error handling with actionable suggestions. Mobile-first responsive design with multiple breakpoints and sticky sidebar layout on larger screens.
-- **Tech Assessment 2 (Backend):** Implemented. Node/Express API with PostgreSQL: CRUD for weather requests with location validation, OpenWeatherMap integration, temperature unit conversion (C↔F), optional YouTube API and Google Maps links for locations, and data export (JSON, CSV, Markdown, PDF). Error handling returns structured `{ code, message, details }` with appropriate status codes. Request validation via Zod schemas.
+- **Tech Assessment 2 (Backend):** Implemented. Node/Express API with PostgreSQL: CRUD for weather requests with location validation, OpenWeatherMap integration, temperature unit conversion (C↔F), data export (JSON, CSV, Markdown, PDF), and Google Maps location links. Error handling returns structured `{ code, message, details }` with appropriate status codes. Request validation via Zod schemas.
 
 ## Prerequisites
 
 - Node.js 18+
 - PostgreSQL (local or remote)
 - [OpenWeatherMap](https://openweathermap.org/api) API key (free tier is enough)
-- Optional: YouTube Data API key for location videos (see backend `.env.example`)
 
 ## Requirements
 
@@ -49,7 +48,7 @@ psql $DATABASE_URL -f backend/migrations/001_schema.sql
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env: set DATABASE_URL and OPENWEATHER_API_KEY (and optionally YOUTUBE_API_KEY)
+# Edit .env: set DATABASE_URL and OPENWEATHER_API_KEY
 npm install
 npm run dev
 ```
@@ -73,7 +72,6 @@ App runs at `http://localhost:5173` and proxies `/api` to the backend.
 | `PORT` | No | Server port (default 3001) |
 | `DATABASE_URL` | Yes | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/weather_app`) |
 | `OPENWEATHER_API_KEY` | Yes | From [OpenWeatherMap](https://openweathermap.org/api) |
-| `YOUTUBE_API_KEY` | No | For location videos on History/location media |
 
 ## Features
 
@@ -81,8 +79,8 @@ App runs at `http://localhost:5173` and proxies `/api` to the backend.
 - **Current weather + 5-day forecast:** From OpenWeatherMap; stored in DB with each request.
 - **Use current location:** Browser geolocation; backend is called with coordinates.
 - **History:** List, view, edit (date, units, notes), and delete saved requests.
-- **Export:** Download all (or filtered) saved data as JSON, CSV, Markdown, or PDF (`GET /api/export?format=json|csv|md|pdf`). (Note: XML export was removed along with discontinued xml2js package)
-- **Extra APIs:** Google Maps link for each location; YouTube videos for a location when `YOUTUBE_API_KEY` is set (`GET /api/locations/:id/media`).
+- **Export:** Download all (or filtered) saved data as JSON, CSV, Markdown, or PDF (`GET /api/export?format=json|csv|md|pdf`).
+- **Google Maps link:** Each location has a direct link to view it on Google Maps.
 - **Context-aware error messages:** Smart error detection and actionable suggestions based on location type and error category (e.g., "Try format: zipcode,countrycode" for zip errors).
 - **Enhanced UI:** Emoji icons throughout (🌤️ weather, 📍 location, 🌡️ temperature, 📝 notes, 🔍 search, ⏳ loading, 🗺️ map), sticky search form sidebar on larger screens.
 
@@ -111,4 +109,3 @@ App runs at `http://localhost:5173` and proxies `/api` to the backend.
 | PUT | `/api/weather-requests/:id` | Update (startDate, endDate, units, notes) |
 | DELETE | `/api/weather-requests/:id` | Delete |
 | GET | `/api/export` | Export (query: format=json|csv|md|pdf) |
-| GET | `/api/locations/:id/media` | YouTube videos + Google Maps URL for location |
