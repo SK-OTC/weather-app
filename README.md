@@ -1,32 +1,24 @@
-# Weather App (Full Stack)
-
-A full-stack weather application that satisfies **Tech Assessment 1 (Frontend)** and **Tech Assessment 2 (Backend)**. Users can enter a location (city, zip, or coordinates), get current weather and a 5-day forecast, use their current location, and manage saved requests (CRUD). Data is persisted in PostgreSQL and can be exported in multiple formats.
-
-## Assessments completed
-
-- **Tech Assessment 1 (Frontend):** Implemented. The React app lets users enter location (city, zip, coordinates), shows current weather and 5-day forecast with responsive grid layout, supports "Use current location" (geolocation), includes emoji weather icons, and provides context-aware error handling with actionable suggestions. Mobile-first responsive design with multiple breakpoints and sticky sidebar layout on larger screens.
-- **Tech Assessment 2 (Backend):** Implemented. Node/Express API with PostgreSQL: CRUD for weather requests with location validation, OpenWeatherMap integration, temperature unit conversion (C↔F), data export (JSON, CSV, Markdown, PDF), and Google Maps location links. Error handling returns structured `{ code, message, details }` with appropriate status codes. Request validation via Zod schemas.
+# Weather App 
 
 ## Prerequisites
-
 - Node.js 18+
 - PostgreSQL (local or remote)
 - [OpenWeatherMap](https://openweathermap.org/api) API key (free tier is enough)
 
 ## Requirements
-
 See [REQUIREMENTS.md](REQUIREMENTS.md) for a complete list of npm packages and versions needed for backend and frontend.
 
-**Quick install:**
+## How to run repo locally:
+Clone this repository then enter the following (down below) in your terminal >>
+
+**Install Packages:**
 
 ```bash
 cd backend && npm install && cd ..
 cd frontend && npm install
 ```
 
-**Check for vulnerabilities:** Run `npm run audit` (or `npm audit`) in both `backend/` and `frontend/` to list known security issues. Fix with `npm audit fix` when possible.
-
-## Quick start
+## Start the weather-app
 
 ### 1. Database
 
@@ -72,32 +64,6 @@ App runs at `http://localhost:5173` and proxies `/api` to the backend.
 | `PORT` | No | Server port (default 3001) |
 | `DATABASE_URL` | Yes | PostgreSQL connection string (e.g. `postgresql://user:pass@localhost:5432/weather_app`) |
 | `OPENWEATHER_API_KEY` | Yes | From [OpenWeatherMap](https://openweathermap.org/api) |
-
-## Features
-
-- **Location input:** City/town, zip/postal code, or coordinates (lat, lon). Location is validated and resolved via OpenWeatherMap geocoding.
-- **Current weather + 5-day forecast:** From OpenWeatherMap; stored in DB with each request.
-- **Use current location:** Browser geolocation; backend is called with coordinates.
-- **History:** List, view, edit (date, units, notes), and delete saved requests.
-- **Export:** Download all (or filtered) saved data as JSON, CSV, Markdown, or PDF (`GET /api/export?format=json|csv|md|pdf`).
-- **Google Maps link:** Each location has a direct link to view it on Google Maps.
-- **Context-aware error messages:** Smart error detection and actionable suggestions based on location type and error category (e.g., "Try format: zipcode,countrycode" for zip errors).
-- **Enhanced UI:** Emoji icons throughout (🌤️ weather, 📍 location, 🌡️ temperature, 📝 notes, 🔍 search, ⏳ loading, 🗺️ map), sticky search form sidebar on larger screens.
-
-## Error handling
-
-- **Backend:** Validation errors (400), location not found (404), upstream weather/API errors (502), and generic errors (500). Responses are `{ code, message, details }`. Zod is used for request validation.
-- **Frontend:** Inline validation (e.g. date range), API error banner with message and dismiss, loading and empty states.
-
-## Responsive design
-
-- **Mobile-first CSS** with responsive breakpoints at 320px, 480px, 600px, 768px, 900px, and 1024px.
-- **Flexbox and CSS Grid** for layout; touch-friendly button sizes (`min-height: 44px`).
-- **SearchView layout:**
-  - Mobile (< 768px): Stacked form and results
-  - Tablet+ (768px+): 2-column sticky layout with form sidebar (`max-width: 320px`, `position: sticky`) and results area (`45-50%` flex-grow)
-- **Forecast grid:** Single column on small screens, 2 columns at 600px+, 5 columns at 900px+.
-- **Visual polish:** Gradient backgrounds, smooth transitions, box shadows, and emoji icons enhance usability.
 
 ## API summary
 
