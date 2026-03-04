@@ -8,21 +8,31 @@ import { supabase } from '../lib/supabase.js';
  */
 export async function resolveAndPersistLocation(locationInput, locationType = 'city') {
   const resolved = await weatherService.geocodeLocation(locationInput, locationType);
-  const raw_input = String(locationInput || '').trim();
-  const normalized_name = resolved.normalizedName || raw_input;
-  const country_code = resolved.countryCode || '';
-  const lat = Number(resolved.lat);
-  const lon = Number(resolved.lon);
+  return persistResolvedLocation({
+    rawInput: locationInput,
+    normalizedName: resolved.normalizedName,
+    countryCode: resolved.countryCode,
+    lat: resolved.lat,
+    lon: resolved.lon,
+  });
+}
 
-  const existing = await findExistingLocation(normalized_name, country_code, lat, lon);
+export async function persistResolvedLocation({ rawInput, normalizedName, countryCode, lat, lon }) {
+  const raw_input = String(rawInput || '').trim();
+  const normalized_name = normalizedName || raw_input;
+  const country_code = countryCode || '';
+  const numericLat = Number(lat);
+  const numericLon = Number(lon);
+
+  const existing = await findExistingLocation(normalized_name, country_code, numericLat, numericLon);
   if (existing) return existing;
 
   return locationsDb.createLocation({
     raw_input,
     normalized_name,
     country_code,
-    lat,
-    lon,
+    lat: numericLat,
+    lon: numericLon,
     source: 'openweather',
   });
 }

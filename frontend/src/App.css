@@ -61,6 +61,92 @@
   padding: 1rem;
 }
 
+.auth-dropdown {
+  position: relative;
+  margin-left: 0.5rem;
+}
+
+.auth-trigger {
+  list-style: none;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  border-radius: 4px;
+  min-height: var(--touch-min);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all var(--transition-short);
+  font-weight: 500;
+}
+
+.auth-trigger:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.auth-dropdown[open] .auth-trigger {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  border-bottom: 3px solid #fff;
+}
+
+.auth-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.auth-trigger::after {
+  content: '▾';
+  margin-left: 0.45rem;
+  font-size: 0.8rem;
+}
+
+.auth-dropdown[open] .auth-trigger::after {
+  content: '▴';
+}
+
+.auth-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 140px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  padding: 0.3rem;
+  z-index: 20;
+}
+
+.auth-menu-item {
+  width: 100%;
+  border: 1px solid #ccc;
+  background: #fff;
+  color: var(--primary-color);
+  text-align: left;
+  border-radius: 4px;
+  min-height: var(--touch-min);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all var(--transition-short);
+}
+
+.auth-menu-item:hover {
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-menu-item:active {
+  transform: scale(0.95);
+}
+
 .container {
   width: 100%;
   transition: max-width var(--transition-normal);
@@ -86,6 +172,15 @@
     justify-content: center;
     padding: 0.4rem;
     font-size: 0.875rem;
+  }
+
+  .auth-dropdown {
+    margin-left: 0;
+    margin-left: auto;
+  }
+
+  .auth-menu {
+    right: 0;
   }
 
   .app-main {

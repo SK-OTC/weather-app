@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import { createWeatherRequest, listWeatherRequests } from '../api/client';
+import { createWeatherRequest } from '../api/client';
 import { getToday, getMaxDate } from '../utils/dateUtils';
+import {
+  addPendingWeatherResult,
+  getLatestPendingResult,
+} from '../utils/localWeatherStorage';
 import LocationInput from '../components/LocationInput';
 import WeatherSummaryCard from '../components/WeatherSummaryCard';
 import ForecastList from '../components/ForecastList';
@@ -48,7 +52,7 @@ function validateSearchResult(data) {
   return null; // Valid result
 }
 
-export default function SearchView() {
+export default function SearchView({ userId }) {
   const [locationInput, setLocationInput] = useState('');
   const [locationType, setLocationType] = useState('city');
   const [units, setUnits] = useState('metric');
@@ -58,59 +62,53 @@ export default function SearchView() {
   const [result, setResult] = useState(null);
   const [hasShownResults, setHasShownResults] = useState(false);
 
-  // Load result from localStorage on mount, but clear it if database is empty
+  // Load latest local pending result while signed out
   useEffect(() => {
-    const initializeStorage = async () => {
-      try {
-        // Check if database has any saved requests
-        const response = await listWeatherRequests({ limit: 1 });
-        const databaseIsEmpty = !response.items || response.items.length === 0;
-        
-        if (databaseIsEmpty) {
-          // Database is empty, clear the cached result to show fresh SearchView
-          localStorage.removeItem('weatherResult');
-          setResult(null);
-          setHasShownResults(false);
-        } else {
-          // Database has data, load from localStorage if available
-          const savedResult = localStorage.getItem('weatherResult');
-          if (savedResult) {
-            try {
-              const parsed = JSON.parse(savedResult);
-              setResult(parsed);
-              setHasShownResults(true);
-            } catch (e) {
-              console.error('Failed to parse saved result:', e);
-            }
-          }
-        }
-      } catch (err) {
-        // Error checking database, preserve localStorage to avoid losing data
-        console.error('Error checking database:', err);
-        const savedResult = localStorage.getItem('weatherResult');
-        if (savedResult) {
-          try {
-            const parsed = JSON.parse(savedResult);
-            setResult(parsed);
-            setHasShownResults(true);
-          } catch (e) {
-            console.error('Failed to parse saved result:', e);
-          }
-        }
-      }
-    };
-    
-    initializeStorage();
-  }, []);
+    if (userId) return;
+    const latest = getLatestPendingResult();
+    if (!latest?.result) return;
+    setResult(latest.result);
+    setHasShownResults(true);
+  }, [userId]);
 
-  // Save result to localStorage whenever it changes
-  useEffect(() => {
-    if (result) {
-      localStorage.setItem('weatherResult', JSON.stringify(result));
-    } else {
-      localStorage.removeItem('weatherResult');
+  const requestWeather = async ({ input, type }) => {
+    const data = await createWeatherRequest({
+      locationInput: input,
+      locationType: type,
+      startDate: getToday(),
+      endDate: getMaxDate(),
+      units,
+      notes: notes || undefined,
+      userId,
+      persistToAccount: Boolean(userId),
+    }, userId);
+
+    const validationError = validateSearchResult(data);
+    if (validationError) {
+      setError(validationError);
+      setResult(null);
+      return null;
     }
-  }, [result]);
+
+    setResult(data);
+    if (!userId) {
+      const saveState = addPendingWeatherResult({
+        locationInput: input,
+        locationType: type,
+        startDate: getToday(),
+        endDate: getMaxDate(),
+        units,
+        notes: notes || null,
+        searchedAt: data.request?.searched_at,
+        result: data,
+      });
+      if (!saveState.saved) {
+        setError('Could not save all local results (browser storage limit reached).');
+      }
+    }
+
+    return data;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -123,21 +121,7 @@ export default function SearchView() {
     }
     setLoading(true);
     try {
-      const data = await createWeatherRequest({
-        locationInput: input,
-        locationType,
-        startDate: getToday(),
-        endDate: getMaxDate(),
-        units,
-        notes: notes || undefined,
-      });
-      const validationError = validateSearchResult(data);
-      if (validationError) {
-        setError(validationError);
-        setResult(null);
-      } else {
-        setResult(data);
-      }
+      await requestWeather({ input, type: locationType });
     } catch (err) {
       const enhancedMessage = enhanceErrorMessage(err, locationType, input);
       setError(enhancedMessage);
@@ -158,21 +142,10 @@ export default function SearchView() {
       async (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
+        const coordsInput = lat + ',' + lon;
         try {
-          const data = await createWeatherRequest({
-            locationInput: lat + ',' + lon,
-            locationType: 'coords',
-            startDate: getToday(),
-            endDate: getMaxDate(),
-            units,
-            notes: notes || undefined,
-          });
-          const validationError = validateSearchResult(data);
-          if (validationError) {
-            setError(validationError);
-            setResult(null);
-          } else {
-            setResult(data);
+          const data = await requestWeather({ input: coordsInput, type: 'coords' });
+          if (data) {
             setLocationInput(lat + ', ' + lon);
           }
         } catch (err) {
@@ -219,7 +192,7 @@ export default function SearchView() {
             </label>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? '⏳ Loading…' : '🔍 Get weather'}
+            {loading ? 'Loading…' : '🔍 Get weather'}
           </button>
         </form>
         <div className="result-container">

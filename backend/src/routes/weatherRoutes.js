@@ -4,6 +4,8 @@ import * as weatherController from '../controllers/weatherController.js';
 const router = express.Router();
 
 router.post('/', weatherController.create);
+router.post('/sync', weatherController.sync);
+router.get('/global-searches', weatherController.listGlobalSearches);
 router.get('/', weatherController.list);
 router.get('/:id', weatherController.getById);
 router.put('/:id', weatherController.update);

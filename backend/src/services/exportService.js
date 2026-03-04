@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase.js';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { validationError } from '../lib/errors.js';
+import { sanitizeSearchTerm } from '../lib/sanitize.js';
 
 const FORMATS = ['json', 'csv', 'md', 'markdown', 'pdf'];
 
@@ -17,7 +18,7 @@ export function validateFormat(format) {
 /**
  * Fetch all weather requests with their snapshots for export (optional filters).
  */
-export async function getExportData({ locationName, startDate, endDate, limit = 500 } = {}) {
+export async function getExportData({ locationName, startDate, endDate, limit = 500, userId } = {}) {
   let query = supabase
     .from('weather_requests')
     .select(`
@@ -27,9 +28,19 @@ export async function getExportData({ locationName, startDate, endDate, limit = 
     `)
     .order('created_at', { ascending: false })
     .limit(Math.min(Number(limit) || 500, 1000));
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  } else {
+    query = query.is('user_id', null);
+  }
   
-  if (locationName) {
-    query = query.or(`locations.normalized_name.ilike.%${locationName}%,locations.raw_input.ilike.%${locationName}%`);
+  const safeLocationName = sanitizeSearchTerm(locationName);
+  if (safeLocationName) {
+    query = query.or(
+      `normalized_name.ilike.*${safeLocationName}*,raw_input.ilike.*${safeLocationName}*`,
+      { foreignTable: 'locations' }
+    );
   }
   if (startDate) {
     query = query.gte('requested_end_date', startDate);
@@ -103,7 +114,8 @@ export function toCSV(data) {
 
 function escapeCsv(val) {
   if (val == null) return '';
-  const s = String(val);
+  const raw = String(val);
+  const s = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
   if (/[,"\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

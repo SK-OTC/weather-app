@@ -31,3 +31,10 @@ export function upstreamError(message = 'Weather service temporarily unavailable
   err.details = details;
   return err;
 }
+
+export function unauthorizedError(message = 'Unauthorized') {
+  const err = new Error(message);
+  err.status = 401;
+  err.code = 'UNAUTHORIZED';
+  return err;
+}

@@ -21,6 +21,20 @@
   box-shadow: var(--shadow-sm);
 }
 
+.toggle-global-btn {
+  margin-left: auto;
+}
+
+.export-note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: var(--touch-min);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #355;
+}
+
 .export-panel label { 
   display: flex; 
   flex-direction: column; 
@@ -53,10 +67,88 @@
   border-radius: 8px;
 }
 
+.loading-state {
+  color: #666;
+  font-style: italic;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.success-banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  border-left: 4px solid var(--success-color);
+  background: rgba(76, 175, 80, 0.12);
+  color: #1b5e20;
+  font-weight: 500;
+}
+
 .history-list { 
   display: flex; 
   flex-direction: column; 
   gap: 0.75rem;
+}
+
+.global-results-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.global-results-panel h3 {
+  margin-top: 0;
+}
+
+.global-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.global-metric {
+  font-size: 0.9rem;
+  color: #355;
+}
+
+.global-chart {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.global-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.global-label {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.global-count {
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+.global-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #e8edf2;
+  overflow: hidden;
+}
+
+.global-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-color) 0%, var(--primary-color) 100%);
 }
 
 .history-card { 
@@ -175,6 +267,11 @@
   .export-panel {
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .toggle-global-btn {
+    margin-left: 0;
+    width: 100%;
   }
 
   .export-panel label,

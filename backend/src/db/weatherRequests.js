@@ -1,16 +1,19 @@
 import { supabase } from './index.js';
+import { sanitizeSearchTerm } from '../lib/sanitize.js';
 
-export async function createRequest({ location_id, requested_start_date, requested_end_date, temperature_unit = 'C', current_temp, current_feels_like, notes }) {
+export async function createRequest({ location_id, requested_start_date, requested_end_date, temperature_unit = 'C', current_temp, current_feels_like, notes, user_id = null, searched_at }) {
   const { data, error } = await supabase
     .from('weather_requests')
     .insert([{
       location_id,
+      user_id,
       requested_start_date,
       requested_end_date,
       temperature_unit,
       current_temp: current_temp ?? null,
       current_feels_like: current_feels_like ?? null,
       notes: notes ?? null,
+      searched_at: searched_at ?? new Date().toISOString(),
     }])
     .select();
   
@@ -18,7 +21,7 @@ export async function createRequest({ location_id, requested_start_date, request
   return data[0] || null;
 }
 
-export async function listRequests({ limit = 50, offset = 0, locationName, startDate, endDate } = {}) {
+export async function listRequests({ limit = 50, offset = 0, locationName, startDate, endDate, userId } = {}) {
   let query = supabase
     .from('weather_requests')
     .select(`
@@ -27,9 +30,19 @@ export async function listRequests({ limit = 50, offset = 0, locationName, start
     `)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  } else {
+    query = query.is('user_id', null);
+  }
   
-  if (locationName) {
-    query = query.or(`locations.normalized_name.ilike.%${locationName}%,locations.raw_input.ilike.%${locationName}%`);
+  const safeLocationName = sanitizeSearchTerm(locationName);
+  if (safeLocationName) {
+    query = query.or(
+      `normalized_name.ilike.*${safeLocationName}*,raw_input.ilike.*${safeLocationName}*`,
+      { foreignTable: 'locations' }
+    );
   }
   if (startDate) {
     query = query.gte('requested_end_date', startDate);
@@ -52,15 +65,22 @@ export async function listRequests({ limit = 50, offset = 0, locationName, start
   }));
 }
 
-export async function getRequestById(id) {
-  const { data, error } = await supabase
+export async function getRequestById(id, userId) {
+  let query = supabase
     .from('weather_requests')
     .select(`
       *,
       locations(raw_input, normalized_name, country_code, lat, lon)
     `)
-    .eq('id', Number(id))
-    .single();
+    .eq('id', Number(id));
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  } else {
+    query = query.is('user_id', null);
+  }
+
+  const { data, error } = await query.single();
   
   if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows returned
   if (!data) return null;
@@ -76,7 +96,7 @@ export async function getRequestById(id) {
   };
 }
 
-export async function updateRequest(id, { requested_start_date, requested_end_date, temperature_unit, current_temp, current_feels_like, notes }) {
+export async function updateRequest(id, { requested_start_date, requested_end_date, temperature_unit, current_temp, current_feels_like, notes, searched_at }, userId) {
   const updates = {};
   
   if (requested_start_date !== undefined) updates.requested_start_date = requested_start_date;
@@ -85,8 +105,9 @@ export async function updateRequest(id, { requested_start_date, requested_end_da
   if (current_temp !== undefined) updates.current_temp = current_temp ?? null;
   if (current_feels_like !== undefined) updates.current_feels_like = current_feels_like ?? null;
   if (notes !== undefined) updates.notes = notes;
+  if (searched_at !== undefined) updates.searched_at = searched_at;
   
-  if (Object.keys(updates).length === 0) return getRequestById(id);
+  if (Object.keys(updates).length === 0) return getRequestById(id, userId);
   
   updates.updated_at = new Date().toISOString();
   
@@ -100,11 +121,36 @@ export async function updateRequest(id, { requested_start_date, requested_end_da
   return data[0] || null;
 }
 
-export async function deleteRequest(id) {
-  const { error } = await supabase
+export async function deleteRequest(id, userId) {
+  let query = supabase
     .from('weather_requests')
     .delete()
     .eq('id', Number(id));
+
+  if (userId) {
+    query = query.eq('user_id', userId);
+  } else {
+    query = query.is('user_id', null);
+  }
+
+  const { error } = await query;
   
   if (error) throw error;
+}
+
+export async function findRequestForUserMerge({ userId, location_id, requested_start_date, requested_end_date, temperature_unit }) {
+  const { data, error } = await supabase
+    .from('weather_requests')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('location_id', Number(location_id))
+    .eq('requested_start_date', requested_start_date)
+    .eq('requested_end_date', requested_end_date)
+    .eq('temperature_unit', temperature_unit)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error && error.code !== 'PGRST116') throw error;
+  return data || null;
 }

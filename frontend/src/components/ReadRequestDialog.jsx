@@ -3,6 +3,7 @@ import './EditRequestDialog.css';
 
 export default function ReadRequestDialog({ data, onEdit, onClose }) {
   const unitSymbol = data.temperature_unit === 'F' ? '°F' : '°C';
+  const weatherDesc = data.snapshots?.filter(snapshot => snapshot.snapshot_date === data.requested_start_date).map(snapshot => snapshot.description?.charAt(0).toUpperCase() + snapshot.description?.slice(1)).join(', ');
   return (
     <div className="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="read-dialog-title">
       <div className="dialog-box">
@@ -10,7 +11,7 @@ export default function ReadRequestDialog({ data, onEdit, onClose }) {
         <div className="read-dialog-content">
           <label>
             <span className="label-text">{data.current_temp ? `Temperature on ${formatDateString(data.requested_start_date)}` : 'Temperature'}</span>
-            <p className="read-field">{data.current_temp ? `${Math.round(data.current_temp)}${unitSymbol}` : 'N/A'}</p>
+            <p className="read-field">{data.current_temp ? `${Math.round(data.current_temp)}${unitSymbol}` : 'N/A'} {weatherDesc ? `— ${weatherDesc}` : ''}</p>
           </label>
           <label>
             <span className="label-text">Notes</span>

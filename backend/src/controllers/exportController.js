@@ -1,10 +1,12 @@
 import * as exportService from '../services/exportService.js';
+import { getOptionalAuthenticatedUserId } from '../lib/auth.js';
 
 export async function exportData(req, res, next) {
   try {
     const format = exportService.validateFormat(req.query.format);
     const { locationName, startDate, endDate, limit } = req.query;
-    const data = await exportService.getExportData({ locationName, startDate, endDate, limit });
+    const userId = await getOptionalAuthenticatedUserId(req);
+    const data = await exportService.getExportData({ locationName, startDate, endDate, limit, userId });
     const [contentType, filename] = exportService.getContentTypeAndFilename(format);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Type', contentType);
